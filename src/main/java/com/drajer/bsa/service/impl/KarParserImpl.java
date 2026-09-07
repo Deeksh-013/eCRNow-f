@@ -109,10 +109,10 @@ public class KarParserImpl implements KarParser {
 
   /** */
   private static final String VARIABLE_EXTENSION_URL =
-      "http://hl7.org/fhir/StructureDefinition/variable";
+          "http://hl7.org/fhir/StructureDefinition/variable";
 
   private static final String US_SPECIFICATION_LIBRARY_PROFILE =
-      "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-specification-library";
+          "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-specification-library";
 
   private static final String RCTC_DEFAULT_SYSTEM = "urn:ietf:rfc:3986";
 
@@ -225,29 +225,29 @@ public class KarParserImpl implements KarParser {
 
   private static final String JSON_KAR_EXT = "json";
   private static final String RECEIVER_ADDRESS_URL =
-      "http://hl7.org/fhir/us/medmorph/StructureDefinition/us-ph-receiver-endpoint";
+          "http://hl7.org/fhir/us/medmorph/StructureDefinition/us-ph-receiver-endpoint";
 
   private static final String LOCAL_HOST_REPO_BASE_URL = "http://localhost";
   private static final String LOCAL_HOST_REPO_NAME = "local-repo";
   private static final String ECR_QUERY_EXTENSION_URL =
-      "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-fhirquerypattern-extension";
+          "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-fhirquerypattern-extension";
   private static final String PH_QUERY_EXTENSION_URL =
-      "http://hl7.org/fhir/us/ph-library/StructureDefinition/us-ph-fhirquerypattern-extension";
+          "http://hl7.org/fhir/us/ph-library/StructureDefinition/us-ph-fhirquerypattern-extension";
   private static final String MEDMORPH_QUERY_EXTENSION_URL =
-      "http://hl7.org/fhir/us/medmorph/StructureDefinition/us-ph-fhirquerypattern-extension";
+          "http://hl7.org/fhir/us/medmorph/StructureDefinition/us-ph-fhirquerypattern-extension";
   private static final String ECR_RELATED_DATA_EXTENSION_URL =
-      "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-relateddata-extension";
+          "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-relateddata-extension";
   private static final String PH_RELATED_DATA_EXTENSION_URL =
-      "http://hl7.org/fhir/us/ph-library/StructureDefinition/us-ph-relateddata-extension";
+          "http://hl7.org/fhir/us/ph-library/StructureDefinition/us-ph-relateddata-extension";
   private static final String MEDMORPH_RELATED_DATA_EXTENSION_URL =
-      "http://hl7.org/fhir/us/medmorph/StructureDefinition/us-ph-relateddata-extension";
+          "http://hl7.org/fhir/us/medmorph/StructureDefinition/us-ph-relateddata-extension";
 
   private static HashMap<String, String> actionClasses = new HashMap<>();
 
   // Load the Topic to Named Event Map.
   static {
     try (InputStream input =
-        SubscriptionUtils.class.getClassLoader().getResourceAsStream("action-classes.properties")) {
+                 SubscriptionUtils.class.getClassLoader().getResourceAsStream("action-classes.properties")) {
 
       Properties prop = new Properties();
       prop.load(input);
@@ -277,9 +277,9 @@ public class KarParserImpl implements KarParser {
           instanceBean = beanFactory.getBean(instance.getClass());
         } catch (NoSuchBeanDefinitionException e) {
           logger.debug(
-              String.format(
-                  "No such bean definition found for action %s, so creating a new instance",
-                  actionId));
+                  String.format(
+                          "No such bean definition found for action %s, so creating a new instance",
+                          actionId));
         }
         if (instanceBean != null) {
           beanFactory.destroyBean(beanFactory.getBean(instance.getClass()));
@@ -322,8 +322,18 @@ public class KarParserImpl implements KarParser {
 
       KnowledgeArtifactRepository repo = karService.getKARByUrl(entry.getKey());
 
+      // Snapshot of the previously persisted state, used to detect whether this repo actually
+      // needs to be saved again. Null means the repo is new, so it must always be saved.
+      Map<String, Boolean> previousAvailability = null;
+      Boolean previousStatus = null;
+
       if (repo != null) {
         logger.info(" Adding Artifacts to existing repo {}", entry.getKey());
+        previousStatus = repo.getRepoStatus();
+        previousAvailability = new HashMap<>();
+        for (KnowledgeArtifactSummaryInfo info : repo.getKarsInfo()) {
+          previousAvailability.put(info.getVersionUniqueId(), info.getKarAvailable());
+        }
         repo.addKars(localKars.get(entry.getKey()));
         kars = repo.getKarsInfo();
         repo.setRepoStatus(true);
@@ -340,27 +350,42 @@ public class KarParserImpl implements KarParser {
 
       // Update non existing KARS in the Repo.
       kars.stream()
-          .forEach(
-              art -> {
-                if (!isArtifactLoaded(art, localKars.get(entry.getKey()))) {
-                  art.setKarAvailable(false);
-                }
-              });
+              .forEach(
+                      art -> {
+                        if (!isArtifactLoaded(art, localKars.get(entry.getKey()))) {
+                          art.setKarAvailable(false);
+                        }
+                      });
 
       // Remove the repos that are found since they will be active.
       inActiveRepos.removeIf(
-          repoEntry -> {
-            String repoUrl = entry.getKey();
-            if (repoEntry.getFhirServerURL().contentEquals(repoUrl)) {
-              logger.info("Removing repo with Url {} since they are existing", repoUrl);
-              return true;
-            } else {
-              return false;
-            }
-          });
+              repoEntry -> {
+                String repoUrl = entry.getKey();
+                if (repoEntry.getFhirServerURL().contentEquals(repoUrl)) {
+                  logger.info("Removing repo with Url {} since they are existing", repoUrl);
+                  return true;
+                } else {
+                  return false;
+                }
+              });
 
-      // Save the repo.
-      karService.saveOrUpdate(repo);
+      // Only save if the repo is new, or its status/KAR availability actually changed. This
+      // avoids issuing redundant UPDATE statements when the KAR is already loaded and unchanged,
+      // e.g. on every app restart when the KAR file on disk hasn't changed.
+      Map<String, Boolean> currentAvailability = new HashMap<>();
+      for (KnowledgeArtifactSummaryInfo info : kars) {
+        currentAvailability.put(info.getVersionUniqueId(), info.getKarAvailable());
+      }
+      boolean unchanged =
+              previousAvailability != null
+                      && Boolean.TRUE.equals(previousStatus)
+                      && previousAvailability.equals(currentAvailability);
+
+      if (!unchanged) {
+        karService.saveOrUpdate(repo);
+      } else {
+        logger.info(" KAR repository {} is unchanged, skipping database update ", entry.getKey());
+      }
     }
 
     logger.info(" Number of Repos to be disabled {}", inActiveRepos.size());
@@ -439,17 +464,17 @@ public class KarParserImpl implements KarParser {
       for (BundleEntryComponent comp : entries) {
 
         if (Optional.ofNullable(comp).isPresent()
-            && comp.getResource().getResourceType() == ResourceType.ValueSet) {
+                && comp.getResource().getResourceType() == ResourceType.ValueSet) {
           logger.debug(" Processing ValueSet ");
           processValueSet((ValueSet) comp.getResource(), art);
         } else if (Optional.ofNullable(comp).isPresent()
-            && comp.getResource().getResourceType() == ResourceType.PlanDefinition) {
+                && comp.getResource().getResourceType() == ResourceType.PlanDefinition) {
           logger.info(" Processing PlanDefinition ");
           processPlanDefinition((PlanDefinition) comp.getResource(), art, kar);
           art.initializeRelatedActions();
           art.initializeRelatedDataIds();
         } else if (Optional.ofNullable(comp).isPresent()
-            && comp.getResource().getResourceType() == ResourceType.Library) {
+                && comp.getResource().getResourceType() == ResourceType.Library) {
           logger.info(" Processing Library");
 
           Library lib = (Library) comp.getResource();
@@ -462,14 +487,14 @@ public class KarParserImpl implements KarParser {
             for (CanonicalType prof : profiles) {
 
               if (prof.getValue().contains(US_SPECIFICATION_LIBRARY_PROFILE)
-                  && lib.getMeta().hasVersionId()
-                  && lib.getMeta().getVersionId().startsWith(VERSION3_ERSD)) {
+                      && lib.getMeta().hasVersionId()
+                      && lib.getMeta().getVersionId().startsWith(VERSION3_ERSD)) {
                 logger.info(" Adding Version {} to KAR", lib.getMeta().getVersionId());
                 art.setKarVersion(lib.getMeta().getVersionId());
                 break;
               } else if (prof.getValue().contains(US_SPECIFICATION_LIBRARY_PROFILE)
-                  && lib.hasVersion()
-                  && lib.getVersion().startsWith(VERSION3_ERSD)) {
+                      && lib.hasVersion()
+                      && lib.getVersion().startsWith(VERSION3_ERSD)) {
                 logger.info(" Adding Version {} to KAR", lib.getVersion());
                 art.setKarVersion(lib.getVersion());
                 break;
@@ -509,8 +534,8 @@ public class KarParserImpl implements KarParser {
     } else {
 
       logger.error(
-          " Bundle for Path : {} cannot be processed because it is either non existent or of the wrong bundle type.",
-          kar);
+              " Bundle for Path : {} cannot be processed because it is either non existent or of the wrong bundle type.",
+              kar);
     }
   }
 
@@ -524,33 +549,33 @@ public class KarParserImpl implements KarParser {
     Bundle bundle;
     if (resource instanceof Library library) {
       bundle =
-          this.repository.search(
-              Bundle.class,
-              library.getClass(),
-              Searches.byUrlAndVersion(library.getUrl(), library.getVersion()));
+              this.repository.search(
+                      Bundle.class,
+                      library.getClass(),
+                      Searches.byUrlAndVersion(library.getUrl(), library.getVersion()));
     } else if (resource instanceof PlanDefinition planDef) {
       bundle =
-          this.repository.search(
-              Bundle.class,
-              planDef.getClass(),
-              Searches.byUrlAndVersion(planDef.getUrl(), planDef.getVersion()));
+              this.repository.search(
+                      Bundle.class,
+                      planDef.getClass(),
+                      Searches.byUrlAndVersion(planDef.getUrl(), planDef.getVersion()));
     } else if (resource instanceof Measure measure) {
       bundle =
-          this.repository.search(
-              Bundle.class,
-              measure.getClass(),
-              Searches.byUrlAndVersion(measure.getUrl(), measure.getVersion()));
+              this.repository.search(
+                      Bundle.class,
+                      measure.getClass(),
+                      Searches.byUrlAndVersion(measure.getUrl(), measure.getVersion()));
     } else if (resource instanceof ValueSet valueSet) {
       bundle =
-          this.repository.search(
-              Bundle.class,
-              valueSet.getClass(),
-              Searches.byUrlAndVersion(valueSet.getUrl(), valueSet.getVersion()));
+              this.repository.search(
+                      Bundle.class,
+                      valueSet.getClass(),
+                      Searches.byUrlAndVersion(valueSet.getUrl(), valueSet.getVersion()));
     } else {
       logger.info("Unexpected Resource Type - attempting to retrieve by ID");
       bundle =
-          this.repository.search(
-              Bundle.class, resource.getClass(), Searches.byId(resource.getId()));
+              this.repository.search(
+                      Bundle.class, resource.getClass(), Searches.byId(resource.getId()));
     }
 
     if (!bundle.hasEntry()) {
@@ -575,8 +600,8 @@ public class KarParserImpl implements KarParser {
         for (Identifier id : ids) {
 
           if (id.hasSystem()
-              && id.getSystem().contentEquals("RCTC_DEFAULT_SYSTEM")
-              && id.hasValue()) {
+                  && id.getSystem().contentEquals("RCTC_DEFAULT_SYSTEM")
+                  && id.hasValue()) {
 
             return id.getValue();
           }
@@ -621,7 +646,7 @@ public class KarParserImpl implements KarParser {
   }
 
   private void processPlanDefinition(
-      PlanDefinition plan, KnowledgeArtifact art, File karBundleFile) {
+          PlanDefinition plan, KnowledgeArtifact art, File karBundleFile) {
 
     art.setKarName(plan.getName());
     art.setKarPublisher(plan.getPublisher());
@@ -671,7 +696,7 @@ public class KarParserImpl implements KarParser {
   }
 
   public void populateCheckResponseAction(
-      SubmitReport baseAction, KnowledgeArtifact art, PlanDefinition plan) {
+          SubmitReport baseAction, KnowledgeArtifact art, PlanDefinition plan) {
 
     CheckResponse action = (CheckResponse) getAction("check-response");
     action.setActionId("check-response", plan.getUrl());
@@ -714,8 +739,8 @@ public class KarParserImpl implements KarParser {
             }
           } else if (t instanceof Reference) {
             Endpoint endpoint =
-                (Endpoint)
-                    art.getDependentResource(ResourceType.Endpoint, ((Reference) t).getReference());
+                    (Endpoint)
+                            art.getDependentResource(ResourceType.Endpoint, ((Reference) t).getReference());
             if (endpoint != null && endpoint.hasAddressElement()) {
               art.addReceiverAddress(endpoint.getAddressElement());
             } else {
@@ -730,9 +755,9 @@ public class KarParserImpl implements KarParser {
           if (variable instanceof Expression) {
             Expression exp = (Expression) variable;
             logger.info(
-                "Found Variable Extension Expression with Name {} and expression {}",
-                exp.getName(),
-                exp.getExpression());
+                    "Found Variable Extension Expression with Name {} and expression {}",
+                    exp.getName(),
+                    exp.getExpression());
             planVariableExpressions.add(exp);
           }
         }
@@ -808,11 +833,11 @@ public class KarParserImpl implements KarParser {
   }
 
   private void populateAction(
-      PlanDefinition plan,
-      PlanDefinitionActionComponent act,
-      BsaAction action,
-      File karBundleFile,
-      KnowledgeArtifact art) {
+          PlanDefinition plan,
+          PlanDefinitionActionComponent act,
+          BsaAction action,
+          File karBundleFile,
+          KnowledgeArtifact art) {
 
     if (act.hasTrigger()) {
       action.setNamedEventTriggers(getNamedEvents(act));
@@ -889,7 +914,7 @@ public class KarParserImpl implements KarParser {
       for (DataRequirement dr : act.getOutput()) {
 
         if (dr.getType() != null
-            && dr.getType().contentEquals(ResourceType.MeasureReport.toString())) {
+                && dr.getType().contentEquals(ResourceType.MeasureReport.toString())) {
           EvaluateMeasure em = (EvaluateMeasure) (action);
           em.setMeasureReportId(dr.getId());
 
@@ -909,11 +934,11 @@ public class KarParserImpl implements KarParser {
   }
 
   private void populateSubActions(
-      PlanDefinition plan,
-      PlanDefinitionActionComponent ac,
-      BsaAction action,
-      File karBundleFile,
-      KnowledgeArtifact art) {
+          PlanDefinition plan,
+          PlanDefinitionActionComponent ac,
+          BsaAction action,
+          File karBundleFile,
+          KnowledgeArtifact art) {
 
     List<PlanDefinitionActionComponent> actions = ac.getAction();
 
@@ -945,22 +970,22 @@ public class KarParserImpl implements KarParser {
   }
 
   private void populateCondition(
-      PlanDefinitionActionComponent ac,
-      BsaAction action,
-      CanonicalType libraryCanonical,
-      File karBundleFile) {
+          PlanDefinitionActionComponent ac,
+          BsaAction action,
+          CanonicalType libraryCanonical,
+          File karBundleFile) {
 
     List<PlanDefinitionActionConditionComponent> conds = ac.getCondition();
 
     for (PlanDefinitionActionConditionComponent con : conds) {
 
       if (con.getExpression() != null
-          // Expression.ExpressionLanguage.fromCode does not support text/cql-identifier
-          // so using
-          // local fromCode for now
-          && (fromCode(con.getExpression().getLanguage())
+              // Expression.ExpressionLanguage.fromCode does not support text/cql-identifier
+              // so using
+              // local fromCode for now
+              && (fromCode(con.getExpression().getLanguage())
               .equals(Expression.ExpressionLanguage.TEXT_CQL))
-          && cqlEnabled) {
+              && cqlEnabled) {
 
         logger.info(" Found a CQL Expression ");
         BsaCqlCondition bc = new BsaCqlCondition();
@@ -968,11 +993,11 @@ public class KarParserImpl implements KarParser {
 
         // Set location of eRSD bundle for loading terminology and library logic
         Endpoint karEndpoint =
-            new Endpoint()
-                // get the kar directory so that the Providers will bundle everything together i.e.
-                // All Kar bundles
-                .setAddress(karBundleFile.getParentFile().getAbsolutePath())
-                .setConnectionType(new Coding().setCode("hl7-fhir-files"));
+                new Endpoint()
+                        // get the kar directory so that the Providers will bundle everything together i.e.
+                        // All Kar bundles
+                        .setAddress(karBundleFile.getParentFile().getAbsolutePath())
+                        .setConnectionType(new Coding().setCode("hl7-fhir-files"));
         bc.setLibraryEndpoint(karEndpoint);
         bc.setTerminologyEndpoint(karEndpoint);
         // Necessary for Cql Evaluation because of CodeSystem Retrieve
@@ -982,21 +1007,21 @@ public class KarParserImpl implements KarParser {
         bc.setNormalReportingDuration(null);
         action.addCondition(bc);
       } else if (con.getExpression().hasExtension(BsaConstants.ALTERNATIVE_EXPRESSION_EXTENSION_URL)
-          || con.hasExtension(BsaConstants.ALTERNATIVE_EXPRESSION_EXTENSION_URL)
+              || con.hasExtension(BsaConstants.ALTERNATIVE_EXPRESSION_EXTENSION_URL)
               && (cqlEnabled || fhirpathEnabled)) {
         Extension ext = con.getExtensionByUrl(BsaConstants.ALTERNATIVE_EXPRESSION_EXTENSION_URL);
         if (ext == null) {
           ext =
-              con.getExpression()
-                  .getExtensionByUrl(BsaConstants.ALTERNATIVE_EXPRESSION_EXTENSION_URL);
+                  con.getExpression()
+                          .getExtensionByUrl(BsaConstants.ALTERNATIVE_EXPRESSION_EXTENSION_URL);
         }
         Expression exp = (Expression) ext.getValue();
         if (exp != null
-            // Expression.ExpressionLanguage.fromCode does not support text/cql-identifier
-            // so using
-            // local fromCode for now
-            && (fromCode(exp.getLanguage()).equals(Expression.ExpressionLanguage.TEXT_CQL))
-            && cqlEnabled) {
+                // Expression.ExpressionLanguage.fromCode does not support text/cql-identifier
+                // so using
+                // local fromCode for now
+                && (fromCode(exp.getLanguage()).equals(Expression.ExpressionLanguage.TEXT_CQL))
+                && cqlEnabled) {
 
           logger.info(" Found a CQL Expression from an alternative expression extension");
           BsaCqlCondition bc = new BsaCqlCondition();
@@ -1007,11 +1032,11 @@ public class KarParserImpl implements KarParser {
 
           // Set location of eRSD bundle for loading terminology and library logic
           Endpoint karEndpoint =
-              new Endpoint()
-                  // get the kar directory so that the Providers will bundle everything together
-                  // i.e. All Kar bundles
-                  .setAddress(karBundleFile.getParentFile().getAbsolutePath())
-                  .setConnectionType(new Coding().setCode("hl7-fhir-files"));
+                  new Endpoint()
+                          // get the kar directory so that the Providers will bundle everything together
+                          // i.e. All Kar bundles
+                          .setAddress(karBundleFile.getParentFile().getAbsolutePath())
+                          .setConnectionType(new Coding().setCode("hl7-fhir-files"));
           bc.setLibraryEndpoint(karEndpoint);
           bc.setTerminologyEndpoint(karEndpoint);
           // Necessary for Cql Evaluation because of CodeSystem Retrieve
@@ -1020,8 +1045,8 @@ public class KarParserImpl implements KarParser {
           bc.setLibraryEvaluationService(libraryEvaluationService);
           action.addCondition(bc);
         } else if (exp != null
-            && (fromCode(exp.getLanguage()).equals(Expression.ExpressionLanguage.TEXT_FHIRPATH))
-            && fhirpathEnabled) {
+                && (fromCode(exp.getLanguage()).equals(Expression.ExpressionLanguage.TEXT_FHIRPATH))
+                && fhirpathEnabled) {
 
           logger.info(" Found a FHIR Path Expression from an alternative expression extension");
           BsaFhirPathCondition bc = new BsaFhirPathCondition();
@@ -1032,11 +1057,11 @@ public class KarParserImpl implements KarParser {
           bc.setExpressionEvaluator(() -> expressionEvaluators.getObject());
           action.addCondition(bc);
         } else if (con.getExpression() != null
-            && (fromCode(con.getExpression().getLanguage())
+                && (fromCode(con.getExpression().getLanguage())
                 .equals(Expression.ExpressionLanguage.TEXT_FHIRPATH))
-            && fhirpathEnabled) {
+                && fhirpathEnabled) {
           logger.info(
-              " Cql disabled and found alternative cql expression therefor using primary fhirpath expression");
+                  " Cql disabled and found alternative cql expression therefor using primary fhirpath expression");
           BsaFhirPathCondition bc = new BsaFhirPathCondition();
           if (planVariableExpressions != null) {
             bc.setVariables(planVariableExpressions);
@@ -1048,9 +1073,9 @@ public class KarParserImpl implements KarParser {
           logger.error(" Unknown type of Alternative Expression passed, cannot process ");
         }
       } else if (con.getExpression() != null
-          && (fromCode(con.getExpression().getLanguage())
+              && (fromCode(con.getExpression().getLanguage())
               .equals(Expression.ExpressionLanguage.TEXT_FHIRPATH))
-          && fhirpathEnabled) {
+              && fhirpathEnabled) {
 
         logger.info(" Found a FHIR Path Expression ");
         BsaFhirPathCondition bc = new BsaFhirPathCondition();
@@ -1086,7 +1111,7 @@ public class KarParserImpl implements KarParser {
   }
 
   private void populateRelatedAction(
-      PlanDefinition plan, PlanDefinitionActionComponent ac, BsaAction action) {
+          PlanDefinition plan, PlanDefinitionActionComponent ac, BsaAction action) {
 
     List<PlanDefinitionActionRelatedActionComponent> racts = ac.getRelatedAction();
 
