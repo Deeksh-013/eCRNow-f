@@ -189,14 +189,14 @@ public class NotificationContextDaoImplTest {
     String notificationResourceId = "resource-123";
     String patientId = "patient-123";
 
-    NotificationContext notificationContext = new NotificationContext();
-    notificationContext.setId(id);
-    notificationContext.setFhirServerBaseUrl(fhirServerBaseUrl);
-    notificationContext.setNotificationResourceId(notificationResourceId);
-    notificationContext.setPatientId(patientId);
+    NotificationContext localNotificationContext = new NotificationContext();
+    localNotificationContext.setId(id);
+    localNotificationContext.setFhirServerBaseUrl(fhirServerBaseUrl);
+    localNotificationContext.setNotificationResourceId(notificationResourceId);
+    localNotificationContext.setPatientId(patientId);
 
     List<NotificationContext> notificationContextList = new ArrayList<>();
-    notificationContextList.add(notificationContext);
+    notificationContextList.add(localNotificationContext);
 
     when(sessionFactory.getCurrentSession()).thenReturn(session);
     when(session.getEntityManagerFactory()).thenReturn(entityManagerFactory);
@@ -224,12 +224,12 @@ public class NotificationContextDaoImplTest {
     String fhirServerBaseUrl = "http://example.com";
     String notificationResourceId = "resource-123";
     String patientId = "patient-123";
-    NotificationContext notificationContext = new NotificationContext();
-    notificationContext.setFhirServerBaseUrl(fhirServerBaseUrl);
-    notificationContext.setNotificationResourceId(notificationResourceId);
-    notificationContext.setPatientId(patientId);
+    NotificationContext localNotificationContext = new NotificationContext();
+    localNotificationContext.setFhirServerBaseUrl(fhirServerBaseUrl);
+    localNotificationContext.setNotificationResourceId(notificationResourceId);
+    localNotificationContext.setPatientId(patientId);
     List<NotificationContext> notificationContextList = new ArrayList<>();
-    notificationContextList.add(notificationContext);
+    notificationContextList.add(localNotificationContext);
 
     when(sessionFactory.getCurrentSession()).thenReturn(session);
     when(session.getEntityManagerFactory()).thenReturn(entityManagerFactory);
@@ -273,7 +273,7 @@ public class NotificationContextDaoImplTest {
     when(hibernateCriteriaBuilder.asc(jpaPath)).thenReturn(jpaOrder);
     when(jpaCriteriaQuery.where(any(JpaExpression.class))).thenReturn(jpaCriteriaQuery);
     when(jpaCriteriaQuery.orderBy(any(JpaOrder.class))).thenReturn(jpaCriteriaQuery);
-    List<NotificationContext> result = dao.getAllNotificationContext(null, searchParams);
+    dao.getAllNotificationContext(null, searchParams);
 
     verify(session).getCriteriaBuilder();
     verify(jpaCriteriaQuery).select(jpaRoot);
@@ -298,7 +298,7 @@ public class NotificationContextDaoImplTest {
     when(jpaCriteriaQuery.where(any(JpaExpression.class))).thenReturn(jpaCriteriaQuery);
     when(jpaCriteriaQuery.orderBy(any(JpaOrder.class))).thenReturn(jpaCriteriaQuery);
 
-    List<NotificationContext> result = dao.getAllNotificationContext(id, searchParams);
+    dao.getAllNotificationContext(id, searchParams);
     verify(session).getCriteriaBuilder();
     verify(jpaCriteriaQuery).select(jpaRoot);
   }
@@ -337,12 +337,12 @@ public class NotificationContextDaoImplTest {
 
   @Test
   public void testDeleteNotificationContext() {
-    NotificationContext notificationContext = new NotificationContext();
+    NotificationContext notificationContextToDelete = new NotificationContext();
     when(sessionFactory.getCurrentSession()).thenReturn(session);
 
-    dao.delete(notificationContext);
+    dao.delete(notificationContextToDelete);
 
     verify(sessionFactory).getCurrentSession();
-    verify(session).delete(notificationContext);
+    verify(session).delete(notificationContextToDelete);
   }
 }

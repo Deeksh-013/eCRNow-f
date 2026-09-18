@@ -13,16 +13,13 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TriggerQueryServiceTest {
 
-  @InjectMocks private TriggerQueryService triggerQueryService;
-
-  //  @Mock private TriggerQueryDstu2Bundle generateDstu2Bundles;
+  private TriggerQueryService triggerQueryService;
 
   @Mock private TriggerQueryR4Bundle generateR4Bundles;
 
@@ -32,6 +29,7 @@ public class TriggerQueryServiceTest {
 
   @Before
   public void setUp() {
+    triggerQueryService = new TriggerQueryService(generateR4Bundles);
     launchDetails = new LaunchDetails();
     startDate = new Date();
     endDate = new Date();

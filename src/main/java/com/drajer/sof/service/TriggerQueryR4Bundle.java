@@ -19,11 +19,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class TriggerQueryR4Bundle {
 
-  @Autowired FhirContextInitializer fhirContextInitializer;
-
-  @Autowired R4ResourcesData r4ResourcesData;
-
+  private final FhirContextInitializer fhirContextInitializer;
+  private final R4ResourcesData r4ResourcesData;
   private static final Logger logger = LoggerFactory.getLogger(TriggerQueryR4Bundle.class);
+
+  @Autowired
+  public TriggerQueryR4Bundle(
+      FhirContextInitializer fhirContextInitializer, R4ResourcesData r4ResourcesData) {
+    this.fhirContextInitializer = fhirContextInitializer;
+    this.r4ResourcesData = r4ResourcesData;
+  }
 
   public Bundle createR4Bundle(
       LaunchDetails launchDetails, R4FhirData r4FhirData, Date start, Date end) {
@@ -39,12 +44,13 @@ public class TriggerQueryR4Bundle {
 
     // Setting bundle to FHIR Data
     logger.info(
-        "------------------------------CodeableConcept Codes------------------------------\n"
-            + "Encounter Codes Size=====> {} \n"
-            + "Conditions Codes Size=====> {} \n"
-            + "Observation Codes Size=====> {}\n"
-            + "Medication Codes Size=====> {}\n"
-            + "ServiceRequests Codes Size=====> {}",
+        """
+            ------------------------------CodeableConcept Codes------------------------------
+            Encounter Codes Size=====> {} \s
+            Conditions Codes Size=====> {} \s
+            Observation Codes Size=====> {}
+            Medication Codes Size=====> {}
+            ServiceRequests Codes Size=====> {}""",
         r4FhirData.getR4EncounterCodes().size(),
         r4FhirData.getR4ConditionCodes().size(),
         r4FhirData.getR4LabResultCodes().size(),

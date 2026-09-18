@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class OperationOutcomeUtil {
 
+  private OperationOutcomeUtil() {}
+
   private static final Logger logger = LoggerFactory.getLogger(OperationOutcomeUtil.class);
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -52,7 +54,7 @@ public class OperationOutcomeUtil {
       String json = parser.encodeResourceToString(operationOutcome);
       return objectMapper.readTree(json); // Convert JSON string to JsonNode
     } catch (Exception e) {
-      logger.error("Parsing error: " + e.getMessage());
+      logger.error("Parsing error: {}", e.getMessage());
     }
     return null;
   }

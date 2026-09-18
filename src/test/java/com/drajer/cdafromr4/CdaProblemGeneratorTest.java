@@ -2,7 +2,6 @@ package com.drajer.cdafromr4;
 
 import static org.junit.Assert.assertNotNull;
 
-import com.drajer.cda.utils.CdaGeneratorConstants;
 import com.drajer.cda.utils.CdaGeneratorUtils;
 import com.drajer.eca.model.PatientExecutionState;
 import com.drajer.sof.model.LaunchDetails;
@@ -38,9 +37,7 @@ public class CdaProblemGeneratorTest extends BaseGeneratorTest {
     PowerMockito.mockStatic(CdaGeneratorUtils.class, Mockito.CALLS_REAL_METHODS);
     PowerMockito.when(CdaGeneratorUtils.getXmlForIIUsingGuid()).thenReturn(XML_FOR_II_USING_GUID);
 
-    String actualXml =
-        CdaProblemGenerator.generateProblemSection(
-            r4Data, launchDetails, CdaGeneratorConstants.CDA_EICR_VERSION_R11);
+    String actualXml = CdaProblemGenerator.generateProblemSection(r4Data, launchDetails);
 
     assertXmlEquals(expectedXml, actualXml);
   }
@@ -68,15 +65,16 @@ public class CdaProblemGeneratorTest extends BaseGeneratorTest {
   @Test
   public void testGenerateEmptyProblemSection() {
     String expectedXml =
-        "<component>\r\n"
-            + "<section nullFlavor=\"NI\">\r\n"
-            + "<templateId root=\"2.16.840.1.113883.10.20.22.2.5.1\"/>\r\n"
-            + "<templateId root=\"2.16.840.1.113883.10.20.22.2.5.1\" extension=\"2015-08-01\"/>\r\n"
-            + "<code code=\"11450-4\" codeSystem=\"2.16.840.1.113883.6.1\" codeSystemName=\"LOINC\" displayName=\"PROBLEM LIST\"/>\r\n"
-            + "<title>PROBLEMS - DIAGNOSES</title>\r\n"
-            + "<text>No Problem Information</text>\r\n"
-            + "</section>\r\n"
-            + "</component>";
+        """
+        <component>\r
+        <section nullFlavor="NI">\r
+        <templateId root="2.16.840.1.113883.10.20.22.2.5.1"/>\r
+        <templateId root="2.16.840.1.113883.10.20.22.2.5.1" extension="2015-08-01"/>\r
+        <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="PROBLEM LIST"/>\r
+        <title>PROBLEMS - DIAGNOSES</title>\r
+        <text>No Problem Information</text>\r
+        </section>\r
+        </component>""";
     String actualXml = CdaProblemGenerator.generateEmptyProblemSection();
     assertXmlEquals(expectedXml, actualXml);
   }

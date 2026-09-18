@@ -8,9 +8,11 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class LaunchDetailsDaoImpl extends AbstractDao implements LaunchDetailsDao {
 
   private final Logger logger = LoggerFactory.getLogger(LaunchDetailsDaoImpl.class);
+
+  /**
+   * Instantiates a new launch details DAO implementation.
+   *
+   * @param sessionFactory the Hibernate session factory
+   */
+  @Autowired
+  public LaunchDetailsDaoImpl(SessionFactory sessionFactory) {
+    super(sessionFactory);
+  }
 
   public LaunchDetails saveOrUpdate(LaunchDetails authDetails) {
     getSession().saveOrUpdate(authDetails);
@@ -29,24 +41,6 @@ public class LaunchDetailsDaoImpl extends AbstractDao implements LaunchDetailsDa
   public LaunchDetails getAuthDetailsById(Integer id) {
     return getSession().get(LaunchDetails.class, id);
   }
-
-  //  public LaunchDetails getLaunchDetailsByPatientAndEncounter(
-  //      String patient, String encounter, String fhirServerUrl) {
-  //    EntityManager em = getSession().getEntityManagerFactory().createEntityManager();
-  //    CriteriaBuilder cb = em.getCriteriaBuilder();
-  //    CriteriaQuery<LaunchDetails> cq = cb.createQuery(LaunchDetails.class);
-  //    Root<LaunchDetails> root = cq.from(LaunchDetails.class);
-  //    Predicate criteria =
-  //        cb.and(
-  //            cb.equal(root.get("ehrServerURL"), fhirServerUrl),
-  //            cb.equal(root.get("launchPatientId"), patient),
-  //            cb.equal(root.get("encounterId"), encounter));
-  //    cq.where(criteria);
-  //
-  //    Query<LaunchDetails> q = getSession().createQuery(cq);
-  //
-  //    return q.uniqueResult();
-  //  }
 
   public LaunchDetails getLaunchDetailsByPatientAndEncounter(
       String patient, String encounter, String fhirServerUrl) {
@@ -70,18 +64,6 @@ public class LaunchDetailsDaoImpl extends AbstractDao implements LaunchDetailsDa
       return q.uniqueResult();
     }
   }
-
-  //  public LaunchDetails getLaunchDetailsByState(int state) {
-  //    EntityManager em = getSession().getEntityManagerFactory().createEntityManager();
-  //    CriteriaBuilder cb = em.getCriteriaBuilder();
-  //    CriteriaQuery<LaunchDetails> cq = cb.createQuery(LaunchDetails.class);
-  //    Root<LaunchDetails> root = cq.from(LaunchDetails.class);
-  //    cq.where(cb.equal(root.get("launchState"), state));
-  //
-  //    Query<LaunchDetails> q = getSession().createQuery(cq);
-  //
-  //    return q.uniqueResult();
-  //  }
 
   public LaunchDetails getLaunchDetailsByState(int state) {
 

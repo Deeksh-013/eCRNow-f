@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class ITRRReceiverServiceController extends BaseIntegrationTest {
 
@@ -43,6 +44,7 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
   @Autowired private EicrServiceImpl eicrService;
 
   @Before
+  @Override
   public void setUp() throws Throwable {
     try {
       super.setUp();
@@ -66,7 +68,7 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
     map.put("token", "R4/Misc/AccessToken.json");
     map.put("metadata", "R4/Misc/MetaData_r4.json");
 
-    stubHelper = new WireMockHelper(wireMockServer, wireMockHttpPort);
+    stubHelper = new WireMockHelper(wireMockServer, WIRE_MOCK_HTTP_PORT);
     stubHelper.stubAuthAndMetadata(map);
 
     String response =
@@ -83,12 +85,10 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
                     .withHeader(
                         "location",
                         "http://localhost:"
-                            + wireMockHttpPort
+                            + WIRE_MOCK_HTTP_PORT
                             + "/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d/DocumentReference/197477086")
                     .withHeader("x-request-id", "32034a8e-07ff-4bfb-a686-de8a956fbda9")
                     .withHeader("Cache-Control", "no-cache")));
-
-    // Thread.sleep(10000);
   }
 
   @Test
@@ -192,7 +192,7 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
   public void testRRReceiver_WithRR_NoSaveToEHR() {
     ReportabilityResponse rr =
         getReportabilityResponse("R4/Misc/rrTest_With_CreateDocRef_False.json");
-    ResponseEntity<String> response = postReportabilityResponse(rr, eicrNoSaveToEHR, false);
+    ResponseEntity<String> response = postReportabilityResponse(rr, eicrNoSaveToEHR);
 
     // Mock FHIR not called (reportable condition, but saveToEhr = false).
     wireMockServer.verify(moreThanOrExactly(0), postRequestedFor(urlEqualTo(FHIR_DOCREF_URL)));
@@ -237,22 +237,22 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
   @Test
   public void testReSubmitRR_OrphanRR() {
     ReportabilityResponse rr = getReportabilityResponse("R4/Misc/rrTest_RRVS2.json");
-    eicrService.setProcessOrphanRr(true);
+    ReflectionTestUtils.setField(eicrService, "processOrphanRr", true);
     // Setting different DocID then in DB
     if (rr != null) {
       String rrXml =
           rr.getRrXml().replace("69550923-8b72-475c-b64b-5f7c44a78e4f", "WrongXCorrelationID");
       rr.setRrXml(rrXml);
-      String fhirUrl = "http://localhost:" + wireMockHttpPort + "/FHIR";
+      String fhirUrl = "http://localhost:" + WIRE_MOCK_HTTP_PORT + "/FHIR";
       rr.setFhirUrl(fhirUrl);
       ResponseEntity<String> response = postReportabilityResponse(rr, eicr);
       wireMockServer.verify(moreThanOrExactly(0), postRequestedFor(urlEqualTo(FHIR_DOCREF_URL)));
       assertEquals(HttpStatus.OK, response.getStatusCode());
 
-      Eicr eicr = new Eicr();
-      eicr.setEicrDocId("WrongXCorrelationID");
+      Eicr localEicr = new Eicr();
+      localEicr.setEicrDocId("WrongXCorrelationID");
 
-      response = reSubmitRR(eicr);
+      response = reSubmitRR(localEicr);
       // Mock FHIR called.
       wireMockServer.verify(moreThanOrExactly(1), postRequestedFor(urlEqualTo(FHIR_DOCREF_URL)));
 
@@ -323,13 +323,13 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
   @Test
   public void testRRReceiver_OrphanRR_WithSetId() {
     ReportabilityResponse rr = getReportabilityResponse("R4/Misc/rrTest.json");
-    eicrService.setProcessOrphanRr(true);
+    ReflectionTestUtils.setField(eicrService, "processOrphanRr", true);
     // Setting different DocID then in DB
     if (rr != null) {
       String rrXml =
           rr.getRrXml().replace("69550923-8b72-475c-b64b-5f7c44a78e4f", "WrongXCorrelationID");
       rr.setRrXml(rrXml);
-      String fhirUrl = "http://localhost:" + wireMockHttpPort + "/FHIR";
+      String fhirUrl = "http://localhost:" + WIRE_MOCK_HTTP_PORT + "/FHIR";
       rr.setFhirUrl(fhirUrl);
       ResponseEntity<String> response = postReportabilityResponse(rr, eicr);
       wireMockServer.verify(moreThanOrExactly(0), postRequestedFor(urlEqualTo(FHIR_DOCREF_URL)));
@@ -340,13 +340,13 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
   @Test
   public void testRRReceiver_OrphanRR_WithoutSetId() {
     ReportabilityResponse rr = getReportabilityResponse("R4/Misc/rrTest_RRVS2.json");
-    eicrService.setProcessOrphanRr(true);
+    ReflectionTestUtils.setField(eicrService, "processOrphanRr", true);
     // Setting different DocID then in DB
     if (rr != null) {
       String rrXml =
           rr.getRrXml().replace("69550923-8b72-475c-b64b-5f7c44a78e4f", "WrongXCorrelationID");
       rr.setRrXml(rrXml);
-      String fhirUrl = "http://localhost:" + wireMockHttpPort + "/FHIR";
+      String fhirUrl = "http://localhost:" + WIRE_MOCK_HTTP_PORT + "/FHIR";
       rr.setFhirUrl(fhirUrl);
       ResponseEntity<String> response = postReportabilityResponse(rr, eicr);
       wireMockServer.verify(moreThanOrExactly(0), postRequestedFor(urlEqualTo(FHIR_DOCREF_URL)));
@@ -454,10 +454,10 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
 
   private Eicr getEICRDocument(String eicrId) {
     try {
-      Eicr eicr = session.get(Eicr.class, Integer.parseInt(eicrId));
-      if (eicr != null) {
-        session.refresh(eicr);
-        return eicr;
+      Eicr localEicr = session.get(Eicr.class, Integer.parseInt(eicrId));
+      if (localEicr != null) {
+        session.refresh(localEicr);
+        return localEicr;
       }
     } catch (Exception e) {
       logger.error("Exception retrieving EICR ", e);
@@ -479,11 +479,6 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
   }
 
   private ResponseEntity<String> postReportabilityResponse(ReportabilityResponse rr, Eicr eicr) {
-    return postReportabilityResponse(rr, eicr, true);
-  }
-
-  private ResponseEntity<String> postReportabilityResponse(
-      ReportabilityResponse rr, Eicr eicr, boolean saveToEhr) {
 
     headers.clear();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -493,7 +488,6 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
     URIBuilder ub;
     try {
       ub = new URIBuilder(createURLWithPort("/api/rrReceiver"));
-      // ub.addParameter("saveToEhr", Boolean.toString(saveToEhr));
 
       HttpEntity<ReportabilityResponse> entity = new HttpEntity<>(rr, headers);
       return restTemplate.exchange(ub.toString(), HttpMethod.POST, entity, String.class);
@@ -516,7 +510,7 @@ public class ITRRReceiverServiceController extends BaseIntegrationTest {
         ub.addParameter("eicrId", String.valueOf(eicr.getId()));
       }
       ub.addParameter("eicrDocId", eicr.getEicrDocId());
-      logger.info("Constructed URL:::::" + ub.toString());
+      logger.info("Constructed URL:::::{}", ub);
       return restTemplate.postForEntity(ub.toString(), null, String.class);
 
     } catch (URISyntaxException e) {

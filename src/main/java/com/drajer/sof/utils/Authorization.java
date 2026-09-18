@@ -24,9 +24,12 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class Authorization {
 
-  @Autowired ClientDetailsService clientDetailService;
-
   private final Logger logger = LoggerFactory.getLogger(Authorization.class);
+
+  @Autowired
+  public Authorization(ClientDetailsService clientDetailService) {
+    // ClientDetailsService is injected but not currently used by this class
+  }
 
   public JSONObject getMetadata(String serverURL) {
     HttpHeaders headers = new HttpHeaders();
@@ -36,13 +39,18 @@ public class Authorization {
     ResponseEntity<String> response = null;
     JSONObject metadata = null;
     try {
-      logger.info(
-          "Getting Metadata information from URL::::: {}", StringEscapeUtils.escapeJava(serverURL));
+      if (logger.isInfoEnabled()) {
+        logger.info(
+            "Getting Metadata information from URL::::: {}",
+            StringEscapeUtils.escapeJava(serverURL));
+      }
       response = restTemplate.exchange(serverURL, HttpMethod.GET, entity, String.class);
       metadata = new JSONObject(response.getBody());
-      logger.info(
-          "Received Metadata Information from URL::::: {}",
-          StringEscapeUtils.escapeJava(serverURL));
+      if (logger.isInfoEnabled()) {
+        logger.info(
+            "Received Metadata Information from URL::::: {}",
+            StringEscapeUtils.escapeJava(serverURL));
+      }
     } catch (Exception e) {
       logger.error(
           "Error in getting Metadata information for URL::::: {}",
@@ -77,9 +85,11 @@ public class Authorization {
 
   public JSONObject getAccessToken(LaunchDetails tokenDetails) {
     JSONObject tokenResponse = null;
-    logger.info(
-        "Getting AccessToken for Client: {}",
-        StringEscapeUtils.escapeJava(tokenDetails.getClientId()));
+    if (logger.isInfoEnabled()) {
+      logger.info(
+          "Getting AccessToken for Client: {}",
+          StringEscapeUtils.escapeJava(tokenDetails.getClientId()));
+    }
     try {
       RestTemplate restTemplate = new RestTemplate();
       HttpHeaders headers = new HttpHeaders();
@@ -95,10 +105,12 @@ public class Authorization {
           restTemplate.exchange(
               tokenDetails.getTokenUrl(), HttpMethod.POST, entity, Response.class);
       tokenResponse = new JSONObject(response.getBody());
-      logger.info(
-          "Received AccessToken for Client: {}",
-          StringEscapeUtils.escapeJava(tokenDetails.getClientId()));
-      logger.info("Received AccessToken: {}", tokenResponse);
+      if (logger.isInfoEnabled()) {
+        logger.info(
+            "Received AccessToken for Client: {}",
+            StringEscapeUtils.escapeJava(tokenDetails.getClientId()));
+        logger.info("Received AccessToken: {}", tokenResponse);
+      }
 
     } catch (Exception e) {
       logger.error(

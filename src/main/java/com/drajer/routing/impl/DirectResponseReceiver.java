@@ -37,8 +37,12 @@ public class DirectResponseReceiver extends RRReceiver {
 
   private static final String IMAP = "imap";
   private static final String INBOX = "Inbox";
+  private final EicrRRService rrService;
 
-  @Autowired EicrRRService rrService;
+  @Autowired
+  public DirectResponseReceiver(EicrRRService rrService) {
+    this.rrService = rrService;
+  }
 
   @Override
   public Object receiveRespone(Object context) {
@@ -74,17 +78,21 @@ public class DirectResponseReceiver extends RRReceiver {
 
       logger.info("Connecting to IMAP Inbox ");
       if (details.getImapUrl() == null || details.getImapUrl().isEmpty()) {
-        logger.info(
-            "Connecting to IMAP Inbox using the imap url {} and port {}",
-            StringEscapeUtils.escapeJava(details.getDirectHost()),
-            port);
+        if (logger.isInfoEnabled()) {
+          logger.info(
+              "Connecting to IMAP Inbox using the imap url {} and port {}",
+              StringEscapeUtils.escapeJava(details.getDirectHost()),
+              port);
+        }
         store.connect(
             details.getDirectHost(), port, details.getDirectUser(), details.getDirectPwd());
       } else {
-        logger.info(
-            "Connecting to IMAP Inbox using imap url {} and port {}",
-            StringEscapeUtils.escapeJava(details.getDirectHost()),
-            port);
+        if (logger.isInfoEnabled()) {
+          logger.info(
+              "Connecting to IMAP Inbox using imap url {} and port {}",
+              StringEscapeUtils.escapeJava(details.getDirectHost()),
+              port);
+        }
         store.connect(details.getImapUrl(), port, details.getDirectUser(), details.getDirectPwd());
       }
 
@@ -166,16 +174,20 @@ public class DirectResponseReceiver extends RRReceiver {
     int port = Integer.parseUnsignedInt(details.getImapPort());
 
     if (details.getImapUrl() == null || details.getImapUrl().isEmpty()) {
-      logger.info(
-          "Connecting to IMAP Inbox using the imap url {} and port {}",
-          StringEscapeUtils.escapeJava(details.getDirectHost()),
-          port);
+      if (logger.isInfoEnabled()) {
+        logger.info(
+            "Connecting to IMAP Inbox using the imap url {} and port {}",
+            StringEscapeUtils.escapeJava(details.getDirectHost()),
+            port);
+      }
       store.connect(details.getDirectHost(), port, details.getDirectUser(), details.getDirectPwd());
     } else {
-      logger.info(
-          "Connecting to IMAP Inbox using imap url {} and port {}",
-          StringEscapeUtils.escapeJava(details.getDirectHost()),
-          port);
+      if (logger.isInfoEnabled()) {
+        logger.info(
+            "Connecting to IMAP Inbox using imap url {} and port {}",
+            StringEscapeUtils.escapeJava(details.getDirectHost()),
+            port);
+      }
       store.connect(details.getImapUrl(), port, details.getDirectUser(), details.getDirectPwd());
     }
 

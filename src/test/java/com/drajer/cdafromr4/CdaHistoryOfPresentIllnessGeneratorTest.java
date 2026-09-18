@@ -1,7 +1,6 @@
 package com.drajer.cdafromr4;
 
 import com.drajer.bsa.utils.R3ToR2DataConverterUtils;
-import com.drajer.cda.utils.CdaGeneratorConstants;
 import com.drajer.cda.utils.CdaGeneratorUtils;
 import com.drajer.sof.model.R4FhirData;
 import com.drajer.test.util.TestUtils;
@@ -35,9 +34,7 @@ public class CdaHistoryOfPresentIllnessGeneratorTest extends BaseGeneratorTest {
 
     r4FhirData.setEncounterDiagnosisConditions(r4FhirData.getConditions());
     String expectedXml = TestUtils.getFileContentAsString(HISTORY_OF_PATIENT_ILLNESS_CDA_FILE);
-    String actualXml =
-        CdaHistoryOfPresentIllnessGenerator.generateHistoryOfPresentIllnessSection(
-            r4FhirData, CdaGeneratorConstants.CDA_EICR_VERSION_R11);
+    String actualXml = CdaHistoryOfPresentIllnessGenerator.generateHistoryOfPresentIllnessSection();
 
     assertXmlEquals(expectedXml, actualXml);
   }
@@ -81,8 +78,6 @@ public class CdaHistoryOfPresentIllnessGeneratorTest extends BaseGeneratorTest {
         resourcesByType.remove(resourceType);
       }
     }
-    //    data.getLabResults().sort(Comparator.comparing(Observation::getId));
-    //    data.getDiagReports().sort(Comparator.comparing(DiagnosticReport::getId));
     data.setData(bundle);
 
     String expectedXml = TestUtils.getFileContentAsString(HISTORY_OF_PHI_CDA_FILE);
@@ -97,18 +92,17 @@ public class CdaHistoryOfPresentIllnessGeneratorTest extends BaseGeneratorTest {
   @Test
   public void testGenerateHistoryOfPresentIllnessSectionWithEmptyConditions() {
     String expectedXml =
-        "<component>\r\n"
-            + "<section nullFlavor=\"NI\">\r\n"
-            + "<templateId root=\"1.3.6.1.4.1.19376.1.5.3.1.3.4\"/>\r\n"
-            + "<code code=\"10164-2\" codeSystem=\"2.16.840.1.113883.6.1\" codeSystemName=\"LOINC\" displayName=\"History of Present Illness\"/>\r\n"
-            + "<title>History of Present Illness</title>\r\n"
-            + "<text>No History of Present Illness Information</text>\r\n"
-            + "</section>\r\n"
-            + "</component>";
+        """
+        <component>\r
+        <section nullFlavor="NI">\r
+        <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.4"/>\r
+        <code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Present Illness"/>\r
+        <title>History of Present Illness</title>\r
+        <text>No History of Present Illness Information</text>\r
+        </section>\r
+        </component>""";
 
-    String actualXml =
-        CdaHistoryOfPresentIllnessGenerator.generateHistoryOfPresentIllnessSection(
-            new R4FhirData(), CdaGeneratorConstants.CDA_EICR_VERSION_R11);
+    String actualXml = CdaHistoryOfPresentIllnessGenerator.generateHistoryOfPresentIllnessSection();
 
     assertXmlEquals(expectedXml, actualXml);
   }

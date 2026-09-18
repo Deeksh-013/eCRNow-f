@@ -31,16 +31,17 @@ public class CdaEncounterGeneratorTest extends BaseGeneratorTest {
       "R4/Condition/Condition-Problem-WithCovidTriggerCode.json";
   private static final String ENCOUNTER_CDA_FILE = "CdaTestData/Cda/Encounter/encounter.xml";
   private static final String EXPECTED_EMPTY_ENCOUNTER_SECTION =
-      "<component>\r\n"
-          + "<section nullFlavor=\"NI\">\r\n"
-          + "<templateId root=\"2.16.840.1.113883.10.20.22.2.22.1\"/>\r\n"
-          + "<templateId root=\"2.16.840.1.113883.10.20.22.2.22.1\" extension=\"2015-08-01\"/>\r\n"
-          + "<code code=\"46240-8\" codeSystem=\"2.16.840.1.113883.6.1\" codeSystemName=\"LOINC\" displayName=\"History of Encounters\"/>\r\n"
-          + "<title>ENCOUNTERS</title>\r\n"
-          + "<text>No Encounter Information</text>\r\n"
-          + "</section>\r\n"
-          + "</component>\r\n"
-          + "";
+      """
+      <component>\r
+      <section nullFlavor="NI">\r
+      <templateId root="2.16.840.1.113883.10.20.22.2.22.1"/>\r
+      <templateId root="2.16.840.1.113883.10.20.22.2.22.1" extension="2015-08-01"/>\r
+      <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Encounters"/>\r
+      <title>ENCOUNTERS</title>\r
+      <text>No Encounter Information</text>\r
+      </section>\r
+      </component>\r
+      """;
 
   @Test
   public void testGenerateEncounterSection() {
@@ -53,9 +54,7 @@ public class CdaEncounterGeneratorTest extends BaseGeneratorTest {
     PowerMockito.when(CdaGeneratorUtils.getGuid())
         .thenReturn("b56b6d6d-7d6e-4ff4-9e5c-f8625c7babe9");
 
-    String actualXml =
-        CdaEncounterGenerator.generateEncounterSection(
-            r4FhirData, launchDetails, CdaGeneratorConstants.CDA_EICR_VERSION_R11);
+    String actualXml = CdaEncounterGenerator.generateEncounterSection(r4FhirData, launchDetails);
 
     assertNotNull(actualXml);
     assertEquals(
@@ -96,9 +95,6 @@ public class CdaEncounterGeneratorTest extends BaseGeneratorTest {
     enClass1.setSystem(CdaGeneratorConstants.FHIR_ENCOUNTER_CLASS_URL);
     en1.setClass_(enClass1);
 
-    expectedCodeXml =
-        "<code code=\"AMB\" codeSystem=\"2.16.840.1.113883.5.4\" codeSystemName=\"v3-ActCode\"><originalText><reference value=\"#test\"/></originalText></code>";
-
     actualCodeXml = CdaEncounterGenerator.getEncounterCodeXml(en1, contentRef);
     assertEquals(actualCodeXml.trim(), actualCodeXml.trim());
 
@@ -111,9 +107,6 @@ public class CdaEncounterGeneratorTest extends BaseGeneratorTest {
     codeableConcept2.addCoding(coding2);
     cds2.add(codeableConcept2);
     en2.setType(cds2);
-
-    expectedCodeXml =
-        "<code code=\"456\" codeSystem=\"2.16.840.1.113883.6.12\" codeSystemName=\"CPT\"><originalText><reference value=\"#test\"/></originalText></code>";
 
     actualCodeXml = CdaEncounterGenerator.getEncounterCodeXml(en2, contentRef);
     assertEquals(actualCodeXml.trim(), actualCodeXml.trim());

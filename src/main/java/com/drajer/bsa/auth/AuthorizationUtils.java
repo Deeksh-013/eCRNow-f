@@ -7,7 +7,6 @@ import java.util.Map;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -15,19 +14,25 @@ import org.springframework.stereotype.Service;
 public class AuthorizationUtils {
 
   private final Logger logger = LoggerFactory.getLogger(AuthorizationUtils.class);
+  private final AuthorizationService backendAuthorizationService;
+  private final AuthorizationService ehrAuthorizationService;
+  private final AuthorizationService passwordAuthorizationService;
 
-  /** The EHR Authorization Service class enables the BSA to get an access token. */
-  @Qualifier("backendauth")
-  @Autowired
-  AuthorizationService backendAuthorizationService;
-
-  @Qualifier("ehrauth")
-  @Autowired
-  AuthorizationService ehrAuthorizationService;
-
-  @Qualifier("passwordauth")
-  @Autowired
-  AuthorizationService passwordAuthorizationService;
+  /**
+   * Instantiates a new authorization utils with required authorization services.
+   *
+   * @param backendAuthorizationService the backend authorization service
+   * @param ehrAuthorizationService the EHR authorization service
+   * @param passwordAuthorizationService the password authorization service
+   */
+  public AuthorizationUtils(
+      @Qualifier("backendauth") AuthorizationService backendAuthorizationService,
+      @Qualifier("ehrauth") AuthorizationService ehrAuthorizationService,
+      @Qualifier("passwordauth") AuthorizationService passwordAuthorizationService) {
+    this.backendAuthorizationService = backendAuthorizationService;
+    this.ehrAuthorizationService = ehrAuthorizationService;
+    this.passwordAuthorizationService = passwordAuthorizationService;
+  }
 
   public JSONObject getToken(FhirServerDetails fsd) {
     JSONObject token;
@@ -36,13 +41,10 @@ public class AuthorizationUtils {
       case USER_NAME_PWD:
         token = passwordAuthorizationService.getAuthorizationToken(fsd);
         break;
-      case SOF_BACKEND:
-      case SOF_PROVIDER:
+      case SOF_BACKEND, SOF_PROVIDER:
         token = backendAuthorizationService.getAuthorizationToken(fsd);
         break;
-      case SYSTEM:
-      case SOF_SYSTEM:
-      case MULTI_TENANT_SYSTEM_LAUNCH:
+      case SYSTEM, SOF_SYSTEM, MULTI_TENANT_SYSTEM_LAUNCH:
         token = ehrAuthorizationService.getAuthorizationToken(fsd);
         break;
       case UNKNOWN:

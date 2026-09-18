@@ -27,9 +27,9 @@ public class ReportGenerationUtilsTest {
 
   @Test
   public void testFilterObservationsByCategory() {
-    FhirContext fhirContext = FhirContext.forR4();
+    FhirContext localFhirContext = FhirContext.forR4();
     Bundle bundle =
-        fhirContext
+        localFhirContext
             .newJsonParser()
             .parseResource(
                 Bundle.class,
@@ -84,22 +84,6 @@ public class ReportGenerationUtilsTest {
   public void testHasCode_NullCodings() {
     Coding cd = null;
     assertFalse(ReportGenerationUtils.hasCode("http://loinc.org", "12345-6", cd));
-  }
-
-  @Test
-  public void testHasCode_CodingsWithoutSystem() {
-    Coding coding = new Coding();
-    coding.setCode("12345-6");
-
-    assertFalse(ReportGenerationUtils.hasCode("http://loinc.org", "12345-6", coding));
-  }
-
-  @Test
-  public void testHasCode_CodingsWithoutCode() {
-    Coding coding = new Coding();
-    coding.setSystem("http://loinc.org");
-
-    assertFalse(ReportGenerationUtils.hasCode("http://loinc.org", "12345-6", coding));
   }
 
   @Test

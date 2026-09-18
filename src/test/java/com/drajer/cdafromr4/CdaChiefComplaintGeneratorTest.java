@@ -1,6 +1,5 @@
 package com.drajer.cdafromr4;
 
-import com.drajer.sof.model.R4FhirData;
 import com.drajer.test.util.TestUtils;
 import org.junit.Test;
 
@@ -13,10 +12,8 @@ public class CdaChiefComplaintGeneratorTest extends BaseGeneratorTest {
 
   @Test
   public void testGenerateChiefComplaintSection() {
-    R4FhirData data = new R4FhirData();
     String expectedXml = TestUtils.getFileContentAsString(CHEIF_COMPLAINT_CDA_FILE);
-    String actualXml =
-        CdaChiefComplaintGenerator.generateChiefComplaintSection(data, launchDetails, "3.1");
+    String actualXml = CdaChiefComplaintGenerator.generateChiefComplaintSection();
 
     assertXmlEquals(expectedXml, actualXml);
   }
@@ -25,11 +22,13 @@ public class CdaChiefComplaintGeneratorTest extends BaseGeneratorTest {
   public void testgenerateChiefComplaintHeader_withNullNf() {
 
     String expectedXml =
-        "<component>\n"
-            + "<section>\n"
-            + "<templateId root=\"1.3.6.1.4.1.19376.1.5.3.1.1.13.2.1\"/>\n"
-            + "<code code=\"10154-3\" codeSystem=\"2.16.840.1.113883.6.1\" codeSystemName=\"LOINC\" displayName=\"CHIEF COMPLAINT\"/>\n"
-            + "<title>CHIEF COMPLAINT</title>\n";
+        """
+        <component>
+        <section>
+        <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.13.2.1"/>
+        <code code="10154-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="CHIEF COMPLAINT"/>
+        <title>CHIEF COMPLAINT</title>
+        """;
     String actualXml = CdaChiefComplaintGenerator.generateChiefComplaintHeader(null);
 
     assertXmlEquals(expectedXml, actualXml);

@@ -23,10 +23,14 @@ import org.springframework.web.client.RestTemplate;
 public class RestApiSender {
 
   private final Logger logger = LoggerFactory.getLogger(RestApiSender.class);
+  private final AuthorizationService authorizationService;
+  private final RestTemplate restTemplate;
 
-  @Autowired private AuthorizationService authorizationService;
-
-  @Autowired private RestTemplate restTemplate;
+  @Autowired
+  public RestApiSender(AuthorizationService authorizationService, RestTemplate restTemplate) {
+    this.authorizationService = authorizationService;
+    this.restTemplate = restTemplate;
+  }
 
   public JSONObject sendEicrXmlDocument(
       final LaunchDetails launchDetails, final String eicrXml, Eicr ecr) {
@@ -48,11 +52,13 @@ public class RestApiSender {
       headers.add("X-Request-ID", newXReqId);
       headers.add("X-Correlation-ID", ecr.getxCorrelationId());
 
-      logger.info(
-          " Launch ReqId: {} X-Request-ID for Eicr Submission: {} X-Correlation-ID for Eicr Submission: {}",
-          StringEscapeUtils.escapeJava(ecr.getxRequestId()),
-          StringEscapeUtils.escapeJava(newXReqId),
-          StringEscapeUtils.escapeJava(ecr.getxCorrelationId()));
+      if (logger.isInfoEnabled()) {
+        logger.info(
+            " Launch ReqId: {} X-Request-ID for Eicr Submission: {} X-Correlation-ID for Eicr Submission: {}",
+            StringEscapeUtils.escapeJava(ecr.getxRequestId()),
+            StringEscapeUtils.escapeJava(newXReqId),
+            StringEscapeUtils.escapeJava(ecr.getxCorrelationId()));
+      }
 
       final String json = constructJson(eicrXml, ecr);
 

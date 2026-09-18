@@ -26,15 +26,14 @@ public class CdaBodyGenerator {
       if (version.contentEquals("CDA_R31")) {
 
         logger.info("Starting Problem generation ");
-        eICRBody.append(CdaProblemGenerator.generateProblemSection(data, details, version));
+        eICRBody.append(CdaProblemGenerator.generateProblemSection(data, details));
 
         logger.info("Starting Encounter generation ");
-        eICRBody.append(CdaEncounterGenerator.generateEncounterSection(data, details, version));
+        eICRBody.append(CdaEncounterGenerator.generateEncounterSection(data, details));
 
         logger.info("Starting R31 Medication Administered Section generation ");
         eICRBody.append(
-            CdaMedicationGenerator.generateR31MedicationsAdministeredSection(
-                data, details, version));
+            CdaMedicationGenerator.generateR31MedicationsAdministeredSection(data, details));
 
         logger.info("Starting R31 Medications Section generation ");
         eICRBody.append(
@@ -48,8 +47,7 @@ public class CdaBodyGenerator {
         eICRBody.append(CdaResultGenerator.generateResultsSection(data, details, version));
 
         logger.info("Starting R31 Chief Complaint Section generation ");
-        eICRBody.append(
-            CdaChiefComplaintGenerator.generateChiefComplaintSection(data, details, version));
+        eICRBody.append(CdaChiefComplaintGenerator.generateChiefComplaintSection());
 
         logger.info("Starting R31 Plan Of Treatment Section generation ");
         eICRBody.append(
@@ -60,24 +58,23 @@ public class CdaBodyGenerator {
             CdaSocialHistoryGenerator.generateR31SocialHistorySection(data, details, version));
 
         logger.info("Starting R31 Pregnancy Section generation ");
-        eICRBody.append(CdaPregnancyGenerator.generatePregnancySection(data, details, version));
+        eICRBody.append(CdaPregnancyGenerator.generatePregnancySection(data, details));
 
         logger.info("Starting R31 ODH Data Section generation ");
-        // eICRBody.append(CdaOdhDataGenerator.generateOdhSection(data, details, version));
 
         logger.info("Starting R31 Procedure Section generation ");
-        eICRBody.append(CdaProcedureGenerator.generateProcedureSection(data, details, version));
+        eICRBody.append(CdaProcedureGenerator.generateProcedureSection(data, details));
 
         logger.info("Starting R31 Vitals generation ");
-        eICRBody.append(CdaVitalSignsGenerator.generateVitalsSection(data, details, version));
+        eICRBody.append(CdaVitalSignsGenerator.generateVitalsSection(data, details));
 
       } else {
 
         logger.info("Starting Problem generation ");
-        eICRBody.append(CdaProblemGenerator.generateProblemSection(data, details, version));
+        eICRBody.append(CdaProblemGenerator.generateProblemSection(data, details));
 
         logger.info("Starting Encounter generation ");
-        eICRBody.append(CdaEncounterGenerator.generateEncounterSection(data, details, version));
+        eICRBody.append(CdaEncounterGenerator.generateEncounterSection(data, details));
 
         logger.info("Starting Result Section generation ");
         eICRBody.append(CdaResultGenerator.generateResultsSection(data, details, version));
@@ -99,12 +96,10 @@ public class CdaBodyGenerator {
       }
 
       logger.info("Starting History of Present Illness Section generation ");
-      eICRBody.append(
-          CdaHistoryOfPresentIllnessGenerator.generateHistoryOfPresentIllnessSection(
-              data, version));
+      eICRBody.append(CdaHistoryOfPresentIllnessGenerator.generateHistoryOfPresentIllnessSection());
 
       logger.info("Starting Reason For Visit Section generation ");
-      eICRBody.append(CdaReasonForVisitGenerator.generateReasonForVisitSection(data, version));
+      eICRBody.append(CdaReasonForVisitGenerator.generateReasonForVisitSection(data));
     }
 
     eICRBody.append(

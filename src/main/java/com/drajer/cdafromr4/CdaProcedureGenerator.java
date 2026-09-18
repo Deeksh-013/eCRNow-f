@@ -15,10 +15,11 @@ import org.slf4j.LoggerFactory;
 
 public class CdaProcedureGenerator {
 
+  private CdaProcedureGenerator() {}
+
   private static final Logger logger = LoggerFactory.getLogger(CdaProcedureGenerator.class);
 
-  public static String generateProcedureSection(
-      R4FhirData data, LaunchDetails details, String version) {
+  public static String generateProcedureSection(R4FhirData data, LaunchDetails details) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -91,7 +92,6 @@ public class CdaProcedureGenerator {
       int rowNum) {
 
     StringBuilder sb = new StringBuilder();
-    String display = CdaGeneratorConstants.UNKNOWN_VALUE;
     Map<String, String> bodyvals = new LinkedHashMap<>();
 
     // Generate the entry
@@ -113,7 +113,7 @@ public class CdaProcedureGenerator {
         CdaGeneratorUtils.getXmlForII(
             details.getAssigningAuthorityId(), proc.getIdElement().getIdPart()));
 
-    display = CdaFhirUtilities.getDisplayStringForCodeableConcept(proc.getCode());
+    String display = CdaFhirUtilities.getDisplayStringForCodeableConcept(proc.getCode());
     bodyvals.put(CdaGeneratorConstants.PROC_TABLE_COL_1_BODY_CONTENT, display);
     sb.append(
         CdaFhirUtilities.getCodeableConceptXml(
@@ -147,12 +147,11 @@ public class CdaProcedureGenerator {
 
   private static Boolean isProcedureActivityObservation(Procedure proc) {
 
-    if (proc != null && proc.hasCode()) {
-
-      if (CdaFhirUtilities.isCodeableConceptPresentForCodeSystem(
-          proc.getCode(), CdaGeneratorConstants.FHIR_LOINC_URL)) {
-        return true;
-      }
+    if (proc != null
+        && proc.hasCode()
+        && CdaFhirUtilities.isCodeableConceptPresentForCodeSystem(
+            proc.getCode(), CdaGeneratorConstants.FHIR_LOINC_URL)) {
+      return true;
     }
 
     return false;
@@ -166,7 +165,6 @@ public class CdaProcedureGenerator {
       int rowNum) {
 
     StringBuilder sb = new StringBuilder();
-    String display = CdaGeneratorConstants.UNKNOWN_VALUE;
     Map<String, String> bodyvals = new LinkedHashMap<>();
 
     // Generate the entry
@@ -187,7 +185,7 @@ public class CdaProcedureGenerator {
         CdaGeneratorUtils.getXmlForII(
             details.getAssigningAuthorityId(), proc.getIdElement().getIdPart()));
 
-    display = CdaFhirUtilities.getDisplayStringForCodeableConcept(proc.getCode());
+    String display = CdaFhirUtilities.getDisplayStringForCodeableConcept(proc.getCode());
     bodyvals.put(CdaGeneratorConstants.PROC_TABLE_COL_1_BODY_CONTENT, display);
     sb.append(
         CdaFhirUtilities.getCodeableConceptXml(
@@ -220,18 +218,15 @@ public class CdaProcedureGenerator {
 
   private static Boolean isProcedureActivityProcedure(Procedure proc) {
 
-    if (proc != null && proc.hasCode()) {
-
-      if (CdaFhirUtilities.isCodeableConceptPresentForCodeSystem(
-          proc.getCode(), CdaGeneratorConstants.FHIR_CPT_URL)) {
-        return true;
-      } else if (CdaFhirUtilities.isCodeableConceptPresentForCodeSystem(
-          proc.getCode(), CdaGeneratorConstants.FHIR_SNOMED_URL)) {
-        return true;
-      }
-      // Add HCPCS and CDT URLs in the future.
-
+    if (proc != null
+        && proc.hasCode()
+        && (CdaFhirUtilities.isCodeableConceptPresentForCodeSystem(
+                proc.getCode(), CdaGeneratorConstants.FHIR_CPT_URL)
+            || CdaFhirUtilities.isCodeableConceptPresentForCodeSystem(
+                proc.getCode(), CdaGeneratorConstants.FHIR_SNOMED_URL))) {
+      return true;
     }
+    // Add HCPCS and CDT URLs in the future.
 
     return false;
   }

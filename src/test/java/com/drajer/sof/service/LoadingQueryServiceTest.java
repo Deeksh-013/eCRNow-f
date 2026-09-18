@@ -13,16 +13,13 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LoadingQueryServiceTest {
 
-  @InjectMocks private LoadingQueryService loadingQueryService;
-
-  //  @Mock private LoadingQueryDstu2Bundle generateDSTU2Bundle;
+  private LoadingQueryService loadingQueryService;
 
   @Mock private LoadingQueryR4Bundle generateR4Bundle;
 
@@ -32,6 +29,7 @@ public class LoadingQueryServiceTest {
 
   @Before
   public void setUp() {
+    loadingQueryService = new LoadingQueryService(generateR4Bundle);
     launchDetails = new LaunchDetails();
     startDate = new Date();
     endDate = new Date();

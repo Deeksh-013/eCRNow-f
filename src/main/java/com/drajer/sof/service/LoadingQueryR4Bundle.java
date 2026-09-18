@@ -27,11 +27,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoadingQueryR4Bundle {
 
-  @Autowired FhirContextInitializer fhirContextInitializer;
-
-  @Autowired R4ResourcesData r4ResourcesData;
-
+  private final FhirContextInitializer fhirContextInitializer;
+  private final R4ResourcesData r4ResourcesData;
   private final Logger logger = LoggerFactory.getLogger(LoadingQueryR4Bundle.class);
+
+  @Autowired
+  public LoadingQueryR4Bundle(
+      FhirContextInitializer fhirContextInitializer, R4ResourcesData r4ResourcesData) {
+    this.fhirContextInitializer = fhirContextInitializer;
+    this.r4ResourcesData = r4ResourcesData;
+  }
 
   public Bundle createR4Bundle(
       LaunchDetails launchDetails, R4FhirData r4FhirData, Date start, Date end) {
@@ -53,22 +58,6 @@ public class LoadingQueryR4Bundle {
 
     r4ResourcesData.loadMedicationsData(
         context, client, launchDetails, r4FhirData, encounter, bundle, start, end);
-
-    // Get Pregnancy Observations, will be used once support of pregnancy observation is added in
-    // Social History section.
-    //    try {
-    //      List<Observation> observationList =
-    //          r4ResourcesData.getPregnancyObservationData(
-    //              context, client, launchDetails, r4FhirData, encounter, start, end);
-    //      r4FhirData.setPregnancyObs(observationList);
-    //      for (Observation observation : observationList) {
-    //        BundleEntryComponent observationsEntry =
-    //            new BundleEntryComponent().setResource(observation);
-    //        bundle.addEntry(observationsEntry);
-    //      }
-    //    } catch (Exception e) {
-    //      logger.error("Error in getting Pregnancy Observation Data", e);
-    //    }
 
     // Get Travel Observations
     try {
@@ -170,14 +159,15 @@ public class LoadingQueryR4Bundle {
 
     // Setting bundle to FHIR Data
     logger.info(
-        "------------------------------CodeableConcept Codes------------------------------\n"
-            + "Encounter Codes Size=====> {} \n"
-            + "Conditions Codes Size=====> {} \n"
-            + "Observation Codes Size=====> {}\n"
-            + "Medication Codes Size=====> {}\n"
-            + "Immunization Codes Size=====> {}\n"
-            + "DiagnosticReport Codes Size=====> {}\n"
-            + "ServiceRequests Codes Size=====> {}",
+        """
+            ------------------------------CodeableConcept Codes------------------------------
+            Encounter Codes Size=====> {} \s
+            Conditions Codes Size=====> {} \s
+            Observation Codes Size=====> {}
+            Medication Codes Size=====> {}
+            Immunization Codes Size=====> {}
+            DiagnosticReport Codes Size=====> {}
+            ServiceRequests Codes Size=====> {}""",
         r4FhirData.getR4EncounterCodes().size(),
         r4FhirData.getR4ConditionCodes().size(),
         r4FhirData.getR4LabResultCodes().size(),

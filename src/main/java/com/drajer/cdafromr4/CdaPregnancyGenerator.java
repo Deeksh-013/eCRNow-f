@@ -20,10 +20,11 @@ import org.slf4j.LoggerFactory;
 
 public class CdaPregnancyGenerator {
 
+  private CdaPregnancyGenerator() {}
+
   private static final Logger logger = LoggerFactory.getLogger(CdaPregnancyGenerator.class);
 
-  public static String generatePregnancySection(
-      R4FhirData data, LaunchDetails details, String version) {
+  public static String generatePregnancySection(R4FhirData data, LaunchDetails details) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -83,18 +84,18 @@ public class CdaPregnancyGenerator {
 
       for (Observation pp : postPartumObs) {
 
-        processPostPartumObservation(pp, details, sb, pregObsXml, rowNum);
+        processPostPartumObservation(pp, sb, pregObsXml, rowNum);
         rowNum++;
       }
 
       for (Observation po : pregOutcomeObs) {
 
-        processPregOutcomeObservation(po, details, sb, pregObsXml, rowNum);
+        processPregOutcomeObservation(po, sb, pregObsXml, rowNum);
         rowNum++;
       }
 
       for (Observation pi : pregnancyIntentionObs) {
-        processPregnancyIntentionObservation(pi, details, sb, pregObsXml, rowNum);
+        processPregnancyIntentionObservation(pi, sb, pregObsXml, rowNum);
         rowNum++;
       }
 
@@ -117,18 +118,13 @@ public class CdaPregnancyGenerator {
     } else {
 
       return sb.toString();
-      // sb.append(generateEmptyPregnancySection());
     }
 
     return sb.toString();
   }
 
   private static void processPregnancyIntentionObservation(
-      Observation pi,
-      LaunchDetails details,
-      StringBuilder table,
-      StringBuilder pregObsXml,
-      int rowNum) {
+      Observation pi, StringBuilder table, StringBuilder pregObsXml, int rowNum) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -208,11 +204,7 @@ public class CdaPregnancyGenerator {
   }
 
   private static void processPregOutcomeObservation(
-      Observation po,
-      LaunchDetails details,
-      StringBuilder table,
-      StringBuilder pregObsXml,
-      int rowNum) {
+      Observation po, StringBuilder table, StringBuilder pregObsXml, int rowNum) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -288,11 +280,7 @@ public class CdaPregnancyGenerator {
   }
 
   public static void processPostPartumObservation(
-      Observation pp,
-      LaunchDetails details,
-      StringBuilder table,
-      StringBuilder pregObsXml,
-      int rowNum) {
+      Observation pp, StringBuilder table, StringBuilder pregObsXml, int rowNum) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -405,7 +393,7 @@ public class CdaPregnancyGenerator {
 
     pregEntries.append(generateEddEntryRelationship(obs));
 
-    pregEntries.append(generateGestationalAgeEntryRelationship(obs, details));
+    pregEntries.append(generateGestationalAgeEntryRelationship(obs));
 
     pregEntries.append(
         CdaGeneratorUtils.getXmlForEndElement(CdaGeneratorConstants.OBS_ACT_EL_NAME));
@@ -515,8 +503,7 @@ public class CdaPregnancyGenerator {
     return sb.toString();
   }
 
-  public static String generateGestationalAgeEntryRelationship(
-      Observation obs, LaunchDetails details) {
+  public static String generateGestationalAgeEntryRelationship(Observation obs) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -528,15 +515,14 @@ public class CdaPregnancyGenerator {
 
         if (comp.hasCode()
             && CdaFhirUtilities.isCodeableConceptPresentInValueSet(
-                CdaGeneratorConstants.GestationalAgeEstimatedValueset, comp.getCode())
+                CdaGeneratorConstants.GESTATIONAL_AGE_ESTIMATED_VALUESET, comp.getCode())
             && comp.hasValueQuantity()
             && comp.getValueQuantity().hasCode()) {
 
           sb.append(
               CdaGeneratorUtils.getXmlForEntryRelationship(
                   CdaGeneratorConstants.ENTRY_REL_REFR_CODE));
-          sb.append(
-              generateXmlForGestationalAge(obs, details, comp.getValueQuantity(), comp.getCode()));
+          sb.append(generateXmlForGestationalAge(comp.getValueQuantity(), comp.getCode()));
           sb.append(CdaGeneratorUtils.getXmlForEndElement(CdaGeneratorConstants.ENTRY_REL_EL_NAME));
         }
       }
@@ -545,8 +531,7 @@ public class CdaPregnancyGenerator {
     return sb.toString();
   }
 
-  public static String generateXmlForGestationalAge(
-      Observation obs, LaunchDetails details, Quantity quantity, CodeableConcept code) {
+  public static String generateXmlForGestationalAge(Quantity quantity, CodeableConcept code) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -862,10 +847,8 @@ public class CdaPregnancyGenerator {
       if (onsetPeriod.hasEnd()) {
         estimatedDate = onsetPeriod.getEndElement();
       }
-    } else if (cond.hasAbatement()) {
-      if (cond.getAbatement() instanceof DateTimeType) {
-        estimatedDate = (DateTimeType) cond.getAbatement();
-      }
+    } else if (cond.hasAbatement() && cond.getAbatement() instanceof DateTimeType) {
+      estimatedDate = (DateTimeType) cond.getAbatement();
     }
 
     if (estimatedDate != null) {
@@ -894,11 +877,11 @@ public class CdaPregnancyGenerator {
 
         if (comp.hasCode()
             && CdaFhirUtilities.isCodeableConceptPresentInValueSet(
-                CdaGeneratorConstants.EstimatedDateofDeliveryValueset, comp.getCode())) {
+                CdaGeneratorConstants.ESTIMATED_DATEOF_DELIVERY_VALUESET, comp.getCode())) {
 
           estimatedDate =
               CdaFhirUtilities.getDateTimeExtensionValue(
-                  comp.getExtension(), CdaGeneratorConstants.EstimatedDateofDeliveryExtUrl);
+                  comp.getExtension(), CdaGeneratorConstants.ESTIMATED_DATEOF_DELIVERY_EXT_URL);
 
           if (estimatedDate != null) {
             found = true;
